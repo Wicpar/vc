@@ -122,7 +122,7 @@ func (c *Client) OAuthPar(ctx context.Context, req *openid4vci.PARRequest) (*ope
 		ClientID:             fmt.Sprintf("x509_san_dns:%s", host),
 		WalletClientID:       req.ClientID,
 		WalletURI:            req.RedirectURI,
-		ExpiresAt:            time.Now().Add(60 * time.Second).Unix(),
+		ExpiresAt:            time.Now().Add(600 * time.Second).Unix(),
 		DynamicParams:        req.DynamicParams,
 	}
 
