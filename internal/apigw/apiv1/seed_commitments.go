@@ -111,6 +111,10 @@ func (c *Client) checkCommitmentClaims() error {
 			}
 		}
 
+		if err := c.checkSeedAdvertisement(scope, meta); err != nil {
+			return err
+		}
+
 		// Everything about WHERE and HOW - element resolution, encoding,
 		// the carrier, and two paths resolving to one element - through
 		// the shared resolver, so this and the apigw's startup check
@@ -120,6 +124,67 @@ func (c *Client) checkCommitmentClaims() error {
 		if _, err := meta.ResolveCommitmentTargets(model.CredentialSchemas{}); err != nil {
 			return fmt.Errorf("credential_metadata.%s: %w", scope, err)
 		}
+	}
+	return nil
+}
+
+// checkSeedAdvertisement refuses a delivering scope whose advertisement
+// would be malformed, or that no wallet could ever complete.
+//
+// At STARTUP, and not at issuance, because neither failure can be
+// caught there. SPEC 2.6 section 5A.4 allows one to eight valid
+// namespace names; a wallet treats a malformed entry as if the
+// configuration were not offered, so it never sends a request for
+// issuance to refuse. And a scope that delivers on an issuer with no
+// credential-encryption keys is a deadlock: checkResponseEncryption
+// refuses a request that carries encryption parameters, because this
+// issuer supports none, while deliverSeeds refuses one that omits
+// them. The credential is advertised and cannot be issued either way.
+func (c *Client) checkSeedAdvertisement(scope string, meta *model.CredentialMetadata) error {
+	namespaces := seedNamespacesForScope(meta)
+	if len(namespaces) == 0 {
+		return nil
+	}
+
+	where := fmt.Sprintf("credential_metadata.%s", scope)
+	if len(namespaces) > maxSeedNamespaces {
+		return fmt.Errorf("%s: delivers %d seed namespaces; the advertisement carries at most %d",
+			where, len(namespaces), maxSeedNamespaces)
+	}
+	for _, namespace := range namespaces {
+		switch {
+		case len(namespace) > maxSeedNamespaceBytes:
+			return fmt.Errorf("%s: seed namespace %q is %d bytes; at most %d",
+				where, namespace, len(namespace), maxSeedNamespaceBytes)
+		case namespace == model.SeedNamespacesMember:
+			return fmt.Errorf("%s: %q is reserved for the advertisement itself and cannot be a seed namespace",
+				where, namespace)
+		}
+	}
+
+	if c.issuerMetadata == nil || c.issuerMetadata.NotificationEndpoint == "" {
+		// A delivered seed comes with a notification_id, which is how
+		// a wallet reports that the commitment it was given does not
+		// open with the seed it was sent (privatedata-spec SPEC 2.6
+		// section 5A.2). Without an advertised notification endpoint
+		// the wallet has nowhere to send it: the id is minted, the
+		// feedback loop is silently absent, and a credential whose
+		// commitment nobody can open is indistinguishable from one
+		// that works.
+		//
+		// vc serves the endpoint unconditionally; it is ADVERTISED
+		// only when apigw.issuer_metadata.notification_endpoint is
+		// set, and a wallet that cannot see it in the metadata will
+		// not use it.
+		return fmt.Errorf("%s: delivers a seed, which comes with a notification_id the wallet reports a failed "+
+			"commitment check through, but this issuer advertises no notification endpoint - set "+
+			"apigw.issuer_metadata.notification_endpoint", where)
+	}
+
+	if c.cfg.APIGW == nil || len(c.cfg.APIGW.IssuerMetadata.CredentialEncryption.Keys) == 0 {
+		return fmt.Errorf("%s: delivers a seed, which is only sent in an encrypted response, but this issuer has no "+
+			"apigw.issuer_metadata.credential_encryption.keys - a wallet asking for encryption would be refused for "+
+			"lack of support, and one not asking would be refused for the seed", where)
 	}
 	return nil
 }
@@ -150,7 +215,12 @@ func seedSecret(name, path, inline string) ([]byte, error) {
 		}
 		return decoded, nil
 	default:
-		return nil, fmt.Errorf("apigw.seeds.%s: set secret_path, or apigw.seeds.%s.secret in the secrets file", name, name)
+		// Naming the secrets FILE, because setting the same key in
+		// config.yaml is the mistake this message has to pre-empt: it
+		// parses, it is ignored, and the operator reads this message
+		// as if they had already done what it asks.
+		return nil, fmt.Errorf("apigw.seeds.%s: set secret_path, or apigw.seeds.%s.secret in the SECRETS file "+
+			"(the same key in config.yaml is not read)", name, name)
 	}
 }
 
