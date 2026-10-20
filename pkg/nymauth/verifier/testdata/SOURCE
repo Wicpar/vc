@@ -3,10 +3,14 @@ challenge-vectors.json is vendored verbatim from
     https://github.com/sirosfoundation/zk-cred-vega
     test-vectors/nymauth/challenge-vectors.json
 
-commit e2c57a30 ("nymauth: refuse non-canonical simple values, and oversized
-Go arguments before they are copied", sirosfoundation/zk-cred-vega#13)
+commit 8e7be172e9010e8b47f3192f046d5f990f602790, which is main and the
+v0.0.7 tag (the squash merge of sirosfoundation/zk-cred-vega#13, carrying the
+redirect handover vectors added by #14)
 
-    sha256 697d016b6232249dce9f96b2a20c370bc1f5cd9941ffe59a784e4bb827baad41
+    sha256 611f6ba601034c37cefddb91422bcafd648c93b181e5eab730305ff46101cb6a
+
+The digest is unchanged from the pre-merge pin this replaced (#14's branch
+head 274ed845), so the merge moved the provenance and not the bytes.
 
 zk-cred-longfellow ships the same file byte for byte; either repository is a
 valid source, and they must not diverge.
