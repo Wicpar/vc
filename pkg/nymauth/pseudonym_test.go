@@ -150,16 +150,19 @@ func TestSeedLengthIsFixedByTheRulebook(t *testing.T) {
 // Verifier actually reported would never match, and the operator would
 // conclude the subject is not the one they are looking for. A wrong
 // answer, not an error.
-// The hashed verifier input is the BARE verifier_id.
+// The hashed verifier input is the PREFIXED verifier_id.
 //
-// This test used to assert the opposite - that a prefixed Client
-// Identifier was the form to hash - and it was wrong. The rulebook
-// states the bare form with worked digests and marks the prefixed one
-// MUST NOT; verifier_id_type is agreed out of band and is not hashed.
-// Hashing the prefix produces a 32-byte value indistinguishable from a
-// correct pseudonym that no Verifier will ever report, so a remapping
-// loop would simply never match and an operator would conclude the
-// subject is innocent.
+// This paragraph asserted the opposite until now, having survived the
+// change below it: rulebook v0.4 inverted the rule, the digests and the
+// refusals were corrected, and the sentence explaining them was not. It
+// is worth replacing rather than deleting, because the inversion is the
+// kind a reader assumes is a mistake and "fixes" back.
+//
+// Either way round, the cost of being wrong is the same and is never an
+// error: hashing the other form yields a 32-byte value indistinguishable
+// from a correct pseudonym that no Verifier will ever report, so a
+// remapping loop never matches and an operator concludes the subject is
+// innocent.
 func TestVerifierInputIsThePrefixedVerifierID(t *testing.T) {
 	// The rulebook's worked digests, recomputed here rather than
 	// copied as opaque constants: if either moves, this says which.

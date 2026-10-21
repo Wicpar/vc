@@ -469,7 +469,7 @@ make build-seed-recover
 ./bin/seed_recover -config /etc/vc/config.yaml -seed primary \
     -subject SE -subject 198001011234 \
     -pseudonym-config known-offender-matching-ssc \
-    -verifier-id verifier.example \
+    -verifier-id x509_san_dns:verifier.example \
     -expect <pseudonym the verifier reported>
 ```
 
@@ -484,51 +484,47 @@ there is nothing to compare against, and exiting 0 regardless would report
 a match for every candidate. The seed itself is printed only with
 `-show-seed`.
 
-`-verifier-id` is the verifier_id **exactly as the Verifier publishes it**,
-prefix included. Nothing is stripped and nothing is normalised — not case,
-not a trailing dot. `verifier_id_type` is agreed out of band and is not
-hashed.
+`-verifier-id` is the verifier_id **exactly as the Verifier publishes it,
+prefix and all**. Rulebook v0.4 defines two forms and no others, and the
+whole string is what is hashed:
+
+```
+x509_san_dns:<dns name>
+semantic_id:<identifier>
+```
+
+The worked digests, which v0.4 inverted relative to earlier drafts:
+
+```
+SHA256("x509_san_dns:verifier.example") = 6eae85a0…6bab   (MUST)
+SHA256("verifier.example")              = be6a6400…4a41   (the bare DNS
+                                                           name, which is
+                                                           NOT a verifier_id)
+```
+
+A value that is neither form is **refused** rather than repaired. The bare
+DNS name was the correct value until 2026-10-20, so a script or a runbook
+written before then still passes one, and it still looks entirely
+plausible. Hashing it would succeed and return a pseudonym no Verifier
+could have reported: the loop would never match, and the operator would
+conclude the subject is innocent. That is a wrong answer about a person
+rather than an error anyone sees, which is why this refuses instead of
+stripping or guessing.
 
 ```
 -verifier-id x509_san_dns:verifier.example    # an x509_san_dns Verifier
 -verifier-id semantic_id:age-over-18-check    # a semantic Verifier
 ```
 
-```
-SHA256("x509_san_dns:verifier.example") = 6eae85a0…6bab   (MUST)
-SHA256("verifier.example")              = be6a6400…4a41   (the bare DNS name, which is NOT a verifier_id)
-```
+Nothing is stripped and nothing is normalised — not case, not a trailing
+dot, not an internationalised name. Where v0.4 is silent on those, this
+hashes the bytes it was given; the questions are filed with the rulebook
+author rather than answered locally.
 
-**This reversed on 2026-10-20.** Until rulebook v0.4 the bare DNS name was
-hashed and the prefixed form refused, so anything written before that date
-says the opposite — including earlier versions of this page. The archive
-circuits settle it: their reference `pseudonym.json` pairs `client_id`
-`x509_san_dns:verifier.example` with `verifier_input` `6eae85a0…`, which is
-the prefixed digest.
-
-The reversal also **simplifies** the rule. This page used to have to explain
-that `semantic_id:` and `x509_san_dns:` look alike and are not the same kind
-of thing — one part of the value, one a Client Identifier Prefix to be
-refused. Under v0.4 they are the same kind of thing: both are part of the
-verifier_id, and both are hashed. There is one rule now, **do not strip
-anything**, and no exception to remember.
-
-Getting it wrong in either direction fails the same silent way: hashing the
-wrong value returns a perfectly well-formed pseudonym that matches nothing,
-the loop reports no match, and the operator concludes the subject is
-innocent. A wrong answer, not an error. A value that is neither form is refused outright, naming both and — when it
-looks like a hostname — the value you probably meant. The bare DNS name was
-the *correct* value until the reversal, so anything written before then
-carries one, and without that refusal it would hash cleanly into a pseudonym
-that matches nothing. The only other values refused are ones naming no
-Verifier at all — an empty string, or a marker with nothing after it.
-
-`semantic_id:` is **not** one of those, and must be passed WHOLE. The
-rulebook says in those words that it is part of the `semantic`
-verifier_id value and not a Client Identifier Prefix, so a semantic
-Verifier's verifier_id is the entire string `semantic_id:<identifier>`
-and that entire string is what is hashed. Removing the prefix produces a
-different pseudonym and the same silent non-match.
+For a semantic Verifier the identifier is taken from the registration
+certificate when one is present, and from the access certificate
+otherwise. The one value refused for naming no Verifier at all is a bare
+prefix with nothing after it.
 
 It reads the issuer's config and secret, so it has to run where those are.
 That is the intended restriction rather than an inconvenience: whoever can
