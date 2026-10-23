@@ -56,6 +56,9 @@ type ProofJWTClaims struct {
 
 	// Iss is the issuer (client_id), OPTIONAL
 	Iss string `json:"iss,omitempty"`
+
+	// AuxiliaryData is the Wallet's Auxiliary Data Entries, OPTIONAL (Credential Auxiliary Data)
+	AuxiliaryData []AuxiliaryDataEntry `json:"auxiliary_data,omitempty"`
 }
 
 // ProofJWK represents a JSON Web Key in a proof header
@@ -215,6 +218,16 @@ func (p ProofJWTToken) ExtractSubjectDID() string {
 	// The "iss" claim in an OpenID4VCI proof JWT represents the client_id,
 	// which for DID-based wallets is typically the holder's DID
 	return claims.Iss
+}
+
+// ExtractAuxiliaryData extracts the auxiliary_data claim from the JWT proof
+// without verifying its signature. Use it only on a proof that Verify accepted.
+func (p ProofJWTToken) ExtractAuxiliaryData() ([]AuxiliaryDataEntry, error) {
+	var claims ProofJWTClaims
+	if err := jwtPayload(string(p), &claims); err != nil {
+		return nil, err
+	}
+	return claims.AuxiliaryData, nil
 }
 
 // ExtractNonce extracts the nonce claim from the JWT proof without verifying signature.
