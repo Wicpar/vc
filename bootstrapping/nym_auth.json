@@ -1,0 +1,30 @@
+{
+  "100": {
+    "meta": {
+      "authentic_source": "Skatteverket",
+      "scope": "nym_auth",
+      "document_id": "document_id_nym_auth_100",
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    "identity_mapping_ids": [
+      "authentic_source_person_id_100"
+    ],
+    "document_data": {
+      "birth_date": "1996-01-30"
+    }
+  },
+  "200": {
+    "meta": {
+      "authentic_source": "Skatteverket",
+      "scope": "nym_auth",
+      "document_id": "document_id_nym_auth_200",
+      "created_at": "0001-01-01T00:00:00Z"
+    },
+    "identity_mapping_ids": [
+      "authentic_source_person_id_200"
+    ],
+    "document_data": {
+      "birth_date": "2011-06-15"
+    }
+  }
+}

@@ -491,6 +491,12 @@ func (c *Client) VCICredential(ctx context.Context, req *openid4vci.CredentialRe
 		return nil, err
 	}
 
+	documentData, auxiliaryData, err := c.applyAuxiliaryData(scope, documentData, req)
+	if err != nil {
+		c.log.Error(err, "auxiliary data refused", "scope", scope)
+		return nil, err
+	}
+
 	var credentials []openid4vci.Credential
 	var issueErr error
 
@@ -536,7 +542,11 @@ func (c *Client) VCICredential(ctx context.Context, req *openid4vci.CredentialRe
 		c.vciMetrics.IssuanceLatency.Record(ctx, time.Since(start).Seconds(), formatAttr)
 	}
 
-	return c.newCredentialResponse(credentials, scope, configurationID), nil
+	response := c.newCredentialResponse(credentials, scope, configurationID)
+	if len(auxiliaryData) > 0 {
+		response.AddAuxiliaryData(auxiliaryData...)
+	}
+	return response, nil
 }
 
 // newCredentialResponse assembles the Credential Response.

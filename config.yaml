@@ -17,6 +17,12 @@ common:
     mdl:
       mddl_file_path: "/metadata/mdl.mdoc.json"
       format: "mso_mdoc"
+    nym_auth:
+      mddl_file_path: "/metadata/nym_auth.mdoc.json"
+      format: "mso_mdoc"
+      auxiliary_data:
+        to_wallet: ["ssc"]
+        to_issuer: ["psc"]
 issuer:
   issuer_url: "https://apigw.vc.docker:8080"
   api_server:
@@ -179,6 +185,10 @@ apigw:
         redirect_uri: "https://apigw.vc.docker:8080/ui/callback"
         scopes: ["openid", "profile"]
   public_url: "https://apigw.vc.docker:8080"
+  issuer_metadata:
+    credential_encryption:
+      keys:
+        - private_key_path: "/pki/credential_encryption.pem"
   issuer_client:
     addr: issuer.vc.docker:8090
   registry_client:
@@ -189,6 +199,7 @@ apigw:
     users:
       - "100"
       - "102"
+      - "200"
   data_sources:
     datastore:
       import:
@@ -200,9 +211,11 @@ apigw:
           - "bootstrapping/pid.json"
           - "bootstrapping/mdl.json"
           - "bootstrapping/pid_mdoc.json"
+          - "bootstrapping/nym_auth.json"
         users:
           - "100"
           - "102"
+          - "200"
       scopes:
         pid:
           auth_provider: oidc
@@ -219,6 +232,10 @@ apigw:
           authentic_source: "Skatteverket"
           auth_claims: ["given_name", "family_name", "birth_date"]
         mdl:
+          auth_provider: oidc
+          authentic_source: "Skatteverket"
+          auth_claims: ["given_name", "family_name", "birth_date"]
+        nym_auth:
           auth_provider: oidc
           authentic_source: "Skatteverket"
           auth_claims: ["given_name", "family_name", "birth_date"]
@@ -254,6 +271,7 @@ apigw:
             - "ehic"
             - "pid_mdoc"
             - "mdl"
+            - "nym_auth"
     credential_offers:
       issuer_url: "https://apigw.vc.docker:8080"
       wallets:

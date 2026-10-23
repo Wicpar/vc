@@ -115,6 +115,10 @@ func New(ctx context.Context, db *db.Service, cacheService *cache.Service, trace
 		return nil, fmt.Errorf("failed to generate issuer metadata: %w", err)
 	}
 
+	if err := c.announceAuxiliaryData(); err != nil {
+		return nil, err
+	}
+
 	// Advertise attest_jwt_client_auth only when the evaluator will actually be wired below (needs Enabled + PDPURL).
 	walletAttestationAdvertised := cfg.APIGW.Trust.WalletAttestation.Enabled && cfg.APIGW.Trust.PDPURL != ""
 	c.oauth2Metadata = c.cfg.APIGW.Delivery.OpenID4VCI.GenerateMetadata(ctx, c.cfg.APIGW.PublicURL, walletAttestationAdvertised, cfg.APIGW.Trust.AllowedSignatureAlgorithms)

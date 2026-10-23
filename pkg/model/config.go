@@ -2274,6 +2274,16 @@ func (cr *CredentialRegistry) NewClient() (ts11client.Client, error) {
 	})
 }
 
+// AuxiliaryDataClaims configures the Credential Auxiliary Data claims of a credential.
+type AuxiliaryDataClaims struct {
+	// ToWallet are claims that get the SHA-256 of a random 16-byte secret
+	// per issuance. The secret goes to the wallet as the opening.
+	ToWallet []string `yaml:"to_wallet,omitempty" validate:"omitempty,dive,required" doc_example:"[\"ssc\"]"`
+	// ToIssuer are claims that get the commitment the wallet sends in its
+	// key proof.
+	ToIssuer []string `yaml:"to_issuer,omitempty" validate:"omitempty,dive,required" doc_example:"[\"psc\"]"`
+}
+
 type CredentialMetadata struct {
 	// VCTMFilePath is the path to a local VCTM JSON file.
 	// When set, apigw will publish the VCTM at /type-metadata/:scope.
@@ -2405,6 +2415,9 @@ type CredentialMetadata struct {
 	// Per CIR 2024/2979 Annex III and ETSI TS 119 472-3 §4.2.5. Only applicable to QEAAs and PuB-EAAs (not PIDs).
 	// Optional and off by default: when omitted, no `disclosure_policy` field is emitted in the credential issuer metadata.
 	DisclosurePolicy *openid4vci.EmbeddedDisclosurePolicy `yaml:"disclosure_policy,omitempty" json:"-" validate:"omitempty"`
+	// AuxiliaryData names the mso_mdoc bstr claims that carry Credential
+	// Auxiliary Data hash commitments.
+	AuxiliaryData *AuxiliaryDataClaims `yaml:"auxiliary_data,omitempty" json:"-" validate:"omitempty"`
 	// Attributes maps claim names to their source fields for credential issuance.
 	// Data sources are rename-only (attribute_mapping); value transformations
 	// belong in the target scope's derivations.

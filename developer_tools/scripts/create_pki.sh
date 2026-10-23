@@ -207,6 +207,14 @@ EOF
         # Clean up
         rm -f signing_ec.csr signing_ec.conf signing_ec.ext
     fi
+
+    # EC key-agreement key (P-256) for Credential Request and Response encryption
+    if [ ! -f "${PKI_DIR}/credential_encryption.pem" ]; then
+        echo "Generating credential encryption key (P-256)..."
+        openssl ecparam -name prime256v1 -genkey -noout -out credential_encryption_raw.pem
+        openssl pkcs8 -topk8 -nocrypt -in credential_encryption_raw.pem -out "${PKI_DIR}/credential_encryption.pem"
+        rm credential_encryption_raw.pem
+    fi
 }
 
 for service_name in ${service_names}; do
