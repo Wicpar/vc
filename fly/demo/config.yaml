@@ -33,6 +33,12 @@ common:
     mdl:
       mddl_file_path: "/metadata/mdl.mdoc.json"
       format: "mso_mdoc"
+    nym_auth:
+      mddl_file_path: "/metadata/nym_auth.mdoc.json"
+      format: "mso_mdoc"
+      auxiliary_data:
+        to_wallet: ["ssc"]
+        to_issuer: ["psc"]
 
 issuer:
   issuer_url: "https://sunet-vc-demo-apigw.fly.dev"
@@ -214,12 +220,16 @@ apigw:
   issuer_metadata:
     authorization_servers:
       - "https://sunet-vc-demo-apigw.fly.dev"
+    credential_encryption:
+      keys:
+        - private_key_path: "/pki/credential_encryption.pem"
   identity_mapping_import:
     file_paths:
       - "/bootstrapping/identity_mappings.json.gz"
     users:
       - "100"
       - "102"
+      - "200"
   auth_providers:
     oidc:
       enable: true
@@ -314,9 +324,11 @@ apigw:
           - "/bootstrapping/mdl.json.gz"
           - "/bootstrapping/microcredential.json.gz"
           #- "/bootstrapping/pid_mdoc.json.gz"
+          - "/bootstrapping/nym_auth.json.gz"
         users:
           - "100"
           - "102"
+          - "200"
       scopes:
         pid:
           auth_provider: oidc
@@ -338,6 +350,10 @@ apigw:
        #   auth_provider: oidc
        #   auth_claims: ["given_name", "family_name", "birthdate"]
         mdl:
+          auth_provider: oidc
+          authentic_source: "Skatteverket"
+          auth_claims: ["given_name", "family_name", "birthdate"]
+        nym_auth:
           auth_provider: oidc
           authentic_source: "Skatteverket"
           auth_claims: ["given_name", "family_name", "birthdate"]
@@ -386,6 +402,7 @@ apigw:
             - "ehic"
             #- "pid_mdoc"
             - "mdl"
+            - "nym_auth"
             - "eduid"
             - "eduid_age_verification"
             - "microcredential"

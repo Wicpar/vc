@@ -63,6 +63,14 @@ primary_region = "arn"
   guest_path = "/bootstrapping/identity_mappings.json.gz"
   local_path = "fly/demo/bootstrapping/identity_mappings.json.gz"
 
+[[files]]
+  guest_path = "/bootstrapping/nym_auth.json.gz"
+  local_path = "fly/demo/bootstrapping/nym_auth.json.gz"
+
+[[files]]
+  guest_path = "/pki/credential_encryption.pem"
+  local_path = "fly/demo/pki/credential_encryption.pem"
+
 [http_service]
   internal_port = 8080
   force_https = true
