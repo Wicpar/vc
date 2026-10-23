@@ -60,6 +60,8 @@ issuer:
     valid_duration: 3600
     verifiable_credential_type: "https://credential.sunet.se/identity_credential"
   pseudonym_seed: true
+  mdoc:
+    certificate_chain_path: "/pki/signing_ec_chain.pem"
 
 verifier:
   api_server:
