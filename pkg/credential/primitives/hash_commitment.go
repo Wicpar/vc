@@ -15,12 +15,25 @@ import (
 	"github.com/SUNET/vc/pkg/claimpath"
 )
 
-// HashCommitmentArgs fulfils the to_wallet hash_commitment entry at Path.
+// HashCommitmentArgs configures the hash_commitment primitive.
 type HashCommitmentArgs struct {
-	// Path is the claims path pointer of the to_wallet entry it fulfils.
+	// Path is the claims path pointer of the entry.
 	Path claimpath.Pointer `yaml:"path" validate:"required" doc_example:"[\"eu.europa.ec.eudi.nym_auth.1\", \"ssc\"]"`
-	// Opening produces the opening.
-	Opening OpeningArgs `yaml:"opening" validate:"required"`
+	// Opening produces the opening of a to_wallet entry. The wallet holds
+	// the opening of a to_issuer entry.
+	Opening *OpeningArgs `yaml:"opening,omitempty"`
+	// Unique sets the key the commitment is unique per.
+	Unique *UniqueArgs `yaml:"unique,omitempty"`
+}
+
+// UniqueArgs configures unique.
+//
+// The issuer accepts one commitment per value of key, until an operator
+// resets it.
+type UniqueArgs struct {
+	// Key lists claims path pointers of the credential. An empty list
+	// makes one commitment for the entry.
+	Key []claimpath.Pointer `yaml:"key" validate:"required,dive,required" doc_example:"[[\"eu.europa.ec.eudi.nym_auth.1\", \"ssc\"]]"`
 }
 
 // OpeningArgs produces the opening of a hash commitment. Exactly one field
@@ -52,10 +65,10 @@ type RandomOpeningArgs struct {
 	Bytes int `yaml:"bytes" validate:"required" doc_example:"16"`
 }
 
-// Apply implements Applier. The derivation pipeline skips hash_commitment,
-// whose opening comes from NewOpening.
+// Apply implements Applier. The Credential Endpoint applies
+// hash_commitment.
 func (a *HashCommitmentArgs) Apply(Claims, time.Time) ([]Write, error) {
-	return nil, errors.New("hash_commitment produces its opening through NewOpening")
+	return nil, errors.New("the Credential Endpoint applies hash_commitment")
 }
 
 // outputs implements ownOutputs: hash_commitment writes no claim of the
@@ -66,7 +79,7 @@ func (a *HashCommitmentArgs) outputs(func(string) (claimpath.Pointer, error)) ([
 
 // resolve reads the dotted hkdf inputs as claims of the source data.
 func (a *HashCommitmentArgs) resolve(source claimpath.Shape) error {
-	if a.Opening.HKDF == nil {
+	if a.Opening == nil || a.Opening.HKDF == nil {
 		return nil
 	}
 	for i := range a.Opening.HKDF.Inputs {
@@ -91,6 +104,9 @@ func HashCommitmentFor(list []Derivation, path claimpath.Pointer) *HashCommitmen
 // NewOpening produces the opening from the claims of the source data,
 // held in the source shape.
 func (a *HashCommitmentArgs) NewOpening(claims map[string]any, source claimpath.Shape) ([]byte, error) {
+	if a.Opening == nil {
+		return nil, fmt.Errorf("hash_commitment %s configures no opening", a.Path)
+	}
 	generator, err := a.Opening.generator()
 	if err != nil {
 		return nil, err

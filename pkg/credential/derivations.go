@@ -89,7 +89,7 @@ func ApplyDerivationsPinned(list []primitives.Derivation, claims map[string]any,
 	generated := map[string]bool{}
 	for i, d := range list {
 		if d.HashCommitment != nil {
-			// Its opening comes from HashCommitmentArgs.NewOpening.
+			// The Credential Endpoint applies it.
 			continue
 		}
 		if err := applyDerivation(working, workingClaims, out, d, now, generated, shapes); err != nil {

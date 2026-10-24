@@ -20,6 +20,19 @@ func (v *VCTM) Validate() error {
 	return validate.Struct(v)
 }
 
+// ClaimAt returns the claim the VCTM declares at path.
+func (v *VCTM) ClaimAt(path claimpath.Pointer) (Claim, bool) {
+	if v == nil {
+		return Claim{}, false
+	}
+	for _, claim := range v.Claims {
+		if claim.Path.Equal(path) {
+			return claim, true
+		}
+	}
+	return Claim{}, false
+}
+
 // SRIIntegrity computes the Subresource Integrity (SRI) hash of the VCTM document
 // as defined in W3C SRI spec and SD-JWT VC draft-14 Section 6.
 // The rawBytes parameter should be the original VCTM document bytes (not re-marshalled)

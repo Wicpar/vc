@@ -41,8 +41,19 @@ func claimMandatory(meta *model.CredentialMetadata, path claimpath.Pointer) bool
 		claim, ok := mddlElement(meta.MDDL, path)
 		return ok && claim.Mandatory
 	}
-	claim, ok := vctmClaim(meta.GetVCTM(), path)
+	claim, ok := meta.GetVCTM().ClaimAt(path)
 	return ok && claim.Mandatory
+}
+
+// claimDeclared reports whether the type metadata declares a claim at
+// path.
+func claimDeclared(meta *model.CredentialMetadata, path claimpath.Pointer) bool {
+	if meta.Format == openid4vp.FormatMsoMdoc {
+		_, ok := mddlElement(meta.MDDL, path)
+		return ok
+	}
+	_, ok := meta.GetVCTM().ClaimAt(path)
+	return ok
 }
 
 // checkMDocCommitmentClaim accepts an element of the MDDL that holds the
@@ -88,7 +99,7 @@ func checkSDJWTCommitmentClaim(vctm *sdjwtvc.VCTM, path claimpath.Pointer) error
 	if err := checkSDJWTClaimName(path); err != nil {
 		return err
 	}
-	claim, ok := vctmClaim(vctm, path)
+	claim, ok := vctm.ClaimAt(path)
 	switch {
 	case !ok:
 		return fmt.Errorf("the VCTM declares no claim at path %s", path)
@@ -120,17 +131,4 @@ func checkSDJWTClaimName(path claimpath.Pointer) error {
 		}
 	}
 	return nil
-}
-
-// vctmClaim returns the claim the VCTM declares at path.
-func vctmClaim(vctm *sdjwtvc.VCTM, path claimpath.Pointer) (sdjwtvc.Claim, bool) {
-	if vctm == nil {
-		return sdjwtvc.Claim{}, false
-	}
-	for _, claim := range vctm.Claims {
-		if claim.Path.Equal(path) {
-			return claim, true
-		}
-	}
-	return sdjwtvc.Claim{}, false
 }

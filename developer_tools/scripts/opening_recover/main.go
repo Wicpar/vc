@@ -198,7 +198,7 @@ func hkdfOpenings(sources model.DataSources, scope string, path claimpath.Pointe
 	var openings []sourceOpening
 	for _, src := range sources.SourceScopes() {
 		hc := primitives.HashCommitmentFor(src.Derivations, path)
-		if src.Scope != scope || hc == nil || hc.Opening.HKDF == nil {
+		if src.Scope != scope || hc == nil || hc.Opening == nil || hc.Opening.HKDF == nil {
 			continue
 		}
 		if err := hc.Opening.Validate(); err != nil {
@@ -218,7 +218,7 @@ func onlyHKDFPath(sources model.DataSources, scope string) (claimpath.Pointer, e
 	for _, src := range sources.SourceScopes() {
 		for _, d := range src.Derivations {
 			hc := d.HashCommitment
-			if src.Scope == scope && hc != nil && hc.Opening.HKDF != nil && !slices.ContainsFunc(paths, hc.Path.Equal) {
+			if src.Scope == scope && hc != nil && hc.Opening != nil && hc.Opening.HKDF != nil && !slices.ContainsFunc(paths, hc.Path.Equal) {
 				paths = append(paths, hc.Path)
 			}
 		}
